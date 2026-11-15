@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""NASA Space Apps 2026 - Field Shift v4.0 sunucu.
-Gerçek NASA veri fusiónu: POWER, SMAP (NSIDC CMR), SRTM (open-elevation), ECOSTRESS, Landsat NDVI, GPM.
+"""NASA Space Apps 2026 - Field Shift v5.0 (emo) sunucu.
+Gerçek NASA veri fusiónu: POWER, SMAP (NSIDC CMR), SRTM (open-elevation).
+ECOSTRESS, Landsat NDVI, GPM için API anahtarı gereken kaynaklar şeffaf bildirimle işaretli.
 HTTP: GET /, GET /static/*, POST /api/analiz, POST /api/rotasyon"""
 import json
 import os

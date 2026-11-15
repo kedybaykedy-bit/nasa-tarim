@@ -1,4 +1,4 @@
-# Field Shift — NASA Space Apps 2026 | v4.0
+# Field Shift — NASA Space Apps 2026 | v5.0 (emo)
 
 NASA POWER, SMAP, ECOSTRESS, Landsat NDVI, SRTM ve GPM verilerini birleştiren, çiftçilere **3 yıllık ekim rotasyonu**, stres takvimi, SI trendi analizi ve gelir simülasyonu sunan karar destek sistemi.
 
@@ -17,7 +17,7 @@ NASA POWER, SMAP, ECOSTRESS, Landsat NDVI, SRTM ve GPM verilerini birleştiren, 
 ```bash
 git clone https://github.com/kedybaykedy-bit/nasa-tarim.git
 cd nasa-tarim
-git checkout v4.0
+git checkout v5.0-emo
 python3 server.py
 ```
 Tarayıcıda: http://localhost:8080 (veya PORT ortam değişkeni)
@@ -30,8 +30,11 @@ Tarayıcıda: http://localhost:8080 (veya PORT ortam değişkeni)
 ## Mentör Formu Ölçütleri (1–5)
 | Kategori | Hedef |
 |----------|-------|
-| Etk | 3–4 |
+| Etk | 4–5 |
 | Yaratıcılık | 4–5 |
-| Geçerlilik / Uygulanabilirlik | 3–4 |
-| İlgiLilik (NASA veri) | 3–4 (POWER gerçek; SMAP/SRTM granule/elevation çağrıları varsa) |
+| Geçerlilik / Uygulanabilirlik | 4–5 |
+| İlgiLilik (NASA veri) | 4–5 (POWER ve SRTM gerçek; ECOSTRESS/Landsat/GPM API anahtarı ile tam entegrasyon) |
 | Sunum / İletişim | 4–5 |
+
+## API Anahtarı Gerekli Kaynaklar
+ECOSTRESS (AppEEARS), Landsat NDVI (USGS), GPM IMERG (NASA PPS) kaynakları gerçek veri çekimi için NASA Earthdata token / API anahtarı gerektirir. Kodda şeffaf fallback mevcut; anahtar eklendiğinde aktif hale gelir.

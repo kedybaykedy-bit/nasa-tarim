@@ -1,3 +1,5 @@
+"""NASA Space Apps 2026 - Field Shift v5.0 (emo) rotasyon motoru.
+SI trendi, belirsizlik, bare-field tespiti ve 3 yıllık rotasyon planı."""
 import json
 import os
 import math
