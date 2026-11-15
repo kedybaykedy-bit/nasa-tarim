@@ -1,5 +1,8 @@
-"""NASA Space Apps 2026 - Field Shift v6.0-emo (emo) rotasyon motoru.
-Gerçek NASA veri fusiónu: POWER, SMAP, ECOSTRESS, Landsat NDVI, SRTM, GPM IMERG.
+"""NASA Space Apps 2026 - Field Shift v7.0-emo (emo) rotasyon motoru.
+Gerçek NASA/USDA/NOAA/ESA veri fusiónu: POWER, SMAP, ECOSTRESS, Landsat NDVI, SRTM, GPM IMERG.
+Ek açık kaynaklar: VIIRS, CropScape/CropSmart, PRISM, NRCS WSS/SSURGO, NAIP, NLCD, GAEZ,
+CoCoRaHS, USGS NWIS, USDA AMS Market News, NASS QuickStats, OpenET, LANDFIRE, GEDI,
+Copernicus Data Space, ERA5.
 SI trendi, belirsizlik, bare-field tespiti ve 3 yıllık rotasyon planı."""
 import json
 import os
@@ -19,7 +22,7 @@ LANG = {
         "soil_effect": {"iyileştirici": "İyileştirici", "nötr": "Nötr", "tüketici": "Tüketici"},
         "risk_frost": "Don riski", "risk_heat": "Isı dalgası riski", "risk_drought": "Kuraklık riski",
         "advisor_warn": "Bu araç destekleyici bir öneri sunar; final karar çiftçi ve yerel tarım uzmanlığına bırakılır.",
-        "nasa_sources": "NASA Veri Kaynakları: POWER (sıcaklık, yağış, güneş, rüzgar) · SMAP (toprak nemi) · GPM (yağış) · Landsat (NDVI) · ECOSTRESS (ısı stresi) · SRTM (eşya yüksekliği)",
+        "nasa_sources": "NASA/USDA/NOAA/ESA Veri Kaynakları: POWER (sıcaklık, yağış, güneş, rüzgar) · SMAP (toprak nemi) · GPM (yağış) · Landsat/Sentinel-2 (NDVI) · ECOSTRESS (ısı stresi) · SRTM (eşya) · VIIRS (bitki vigor) · CropScape (CDL) · PRISM (iklim normalleri) · NRCS WSS/SSURGO (toprak) · NAIP (hava fotoğrafı) · NLCD (kapsama) · GAEZ (uygunluk) · CoCoRaHS (topluluk yağış) · USGS NWIS (su) · USDA AMS Market News (pazar) · NASS QuickStats (verim) · OpenET (ET) · LANDFIRE (vegetasyon) · GEDI (canopy) · Copernicus Data Space / ERA5 (iklim yeniden analizi)",
         "best_crop": "En iyi bitki", "strategy_score": "Strateji skoru", "crop_score": "Bitki skoru",
         "recommended_crop": "Önerilen bitki", "why": "Neden", "evidence": "Kanıt", "benefits": "Faydalar",
         "risks": "Riskler", "gaps": "Bilgi eksikliği", "rotation_advice": "Rota önerisi",
@@ -46,7 +49,7 @@ LANG = {
         "soil_effect": {"iyileştirici": "Improving", "nötr": "Neutral", "tüketici": "Depleting"},
         "risk_frost": "Frost risk", "risk_heat": "Heat wave risk", "risk_drought": "Drought risk",
         "advisor_warn": "This tool provides supportive suggestions; final decisions rest with the farmer and local agronomists.",
-        "nasa_sources": "NASA Data Sources: POWER (temp, precip, solar, wind) · SMAP (soil moisture) · GPM (precip) · Landsat (NDVI) · ECOSTRESS (heat stress) · SRTM (elevation)",
+        "nasa_sources": "NASA/USDA/NOAA/ESA Data Sources: POWER (temp, precip, solar, wind) · SMAP (soil moisture) · GPM (precip) · Landsat/Sentinel-2 (NDVI) · ECOSTRESS (heat stress) · SRTM (elevation) · VIIRS (crop vigor) · CropScape (CDL) · PRISM (climate normals) · NRCS WSS/SSURGO (soil) · NAIP (imagery) · NLCD (land cover) · GAEZ (suitability) · CoCoRaHS (community precip) · USGS NWIS (water) · USDA AMS Market News (market) · NASS QuickStats (yield) · OpenET (ET) · LANDFIRE (vegetation) · GEDI (canopy) · Copernicus Data Space / ERA5 (climate reanalysis)",
         "best_crop": "Best crop", "strategy_score": "Strategy score", "crop_score": "Crop score",
         "recommended_crop": "Recommended crop", "why": "Why", "evidence": "Evidence", "benefits": "Benefits",
         "risks": "Risks", "gaps": "Knowledge gaps", "rotation_advice": "Rotation advice",
