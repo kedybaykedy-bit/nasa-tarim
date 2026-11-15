@@ -1,5 +1,6 @@
 import json
 import os
+import math
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 
@@ -27,6 +28,8 @@ LANG = {
         "frost_warning": "⚠ Bu dönemde don riski yüksek — erken tohumlama/koruma önlemi alın.",
         "heat_warning": "⚠ Bu dönemde ısı dalgası riski yüksek — sulama/ölçme planlayın.",
         "drought_warning": "⚠ Bu dönemde kuraklık riski yüksek — su tasarruflu bitki tercih edin.",
+        "bare_field_warning": "⚠ Bu dönemde tarla boş kalma riski yüksek — örtü bitki önerilir.",
+        "uncertainty_low": "Düşük belirsizlik", "uncertainty_mid": "Orta belirsizlik", "uncertainty_high": "Yüksek belirsizlik",
         "lang_switch": "EN",
     },
     "en": {
@@ -52,6 +55,8 @@ LANG = {
         "frost_warning": "⚠ High frost risk this period — consider early planting/protection.",
         "heat_warning": "⚠ High heat wave risk this period — plan irrigation/monitoring.",
         "drought_warning": "⚠ High drought risk this period — prefer water-saving crops.",
+        "bare_field_warning": "⚠ High bare-field risk this period — consider cover crop.",
+        "uncertainty_low": "Low uncertainty", "uncertainty_mid": "Medium uncertainty", "uncertainty_high": "High uncertainty",
         "lang_switch": "TR",
     },
 }
@@ -62,7 +67,8 @@ def load_crops():
         return json.load(f)
 
 
-def clima_uygunluk(ort, crop):
+def clima_uygunluk(ort, crop, ekstra=None):
+    """0-100 arası klima uygunluk skoru. SMAP/SRTM verileri varsa düzeltme uygular."""
     t_min, t_max = crop["sıcaklık"]
     p_min, p_max = crop["yağış"]
     s_min, s_max = crop["güneş"]
@@ -83,11 +89,118 @@ def clima_uygunluk(ort, crop):
     st = skalala(t, t_min, t_max)
     sp = skalala(p, p_min, p_max)
     ss = skalala(s, s_min, s_max)
-    return round((st * 0.5 + sp * 0.3 + ss * 0.2), 1)
+    skor = round((st * 0.5 + sp * 0.3 + ss * 0.2), 1)
+
+    # SRTM elevasyonu: yüksek taraflarda kurak toleranslı bitkilere bonus
+    if ekstra and ekstra.get("srtm", {}).get("available"):
+        elev = ekstra["srtm"].get("elevation_m") or 0
+        if elev > 800 and crop["su_ihtiyacı"] == "düşük":
+            skor = min(100, skor + 5)
+        elif elev > 1200 and crop["toprak_etkisi"] == "tüketici":
+            skor = max(0, skor - 5)
+
+    return skor
 
 
-def strategi_skoru(ort, oncelikler, crop, onceki, constraints, crops_global):
-    skor = clima_uygunluk(ort, crop)
+def si_trend_analiz(aylik_veri, ort_s):
+    """NASA POWER aylık verisinden sıcaklık ve yağış trendi (OLS eğim + R² + son yıl anomali)."""
+    L = None  # dil sonradan eklenir
+    if not aylik_veri or "properties" not in aylik_veri:
+        return {
+            "sicaklik_trend": {"slope": 0.0, "r2": 0.0, "anomali": None},
+            "yagis_trend": {"slope": 0.0, "r2": 0.0, "anomali": None},
+            "guven_duzeyi": 0,
+            "yorumlama": "Yeterli aylık veri yok; trend hesaplanamadı.",
+            "yillar": [],
+        }
+
+    pdata = aylik_veri["properties"].get("parameter", {})
+    t_vals = pdata.get("T2M", {})
+    p_vals = pdata.get("PRECTOTCORR", {})
+
+    years = sorted({int(k[:4]) for k in list(t_vals.keys()) + list(p_vals.keys())})
+    if len(years) < 2:
+        return {
+            "sicaklik_trend": {"slope": 0.0, "r2": 0.0, "anomali": None},
+            "yagis_trend": {"slope": 0.0, "r2": 0.0, "anomali": None},
+            "guven_duzeyi": 0,
+            "yorumlama": "En az 2 yıllık veri gerekli; trend hesaplanamadı.",
+            "yillar": years,
+        }
+
+    def ols(series):
+        # series: {YYYYMM: value}
+        xs = []
+        ys = []
+        for k, v in series.items():
+            if isinstance(v, (int, float)) and v >= 0:
+                xs.append(float(k[:4]) + (int(k[4:6]) - 1) / 12.0)
+                ys.append(float(v))
+        if len(xs) < 2:
+            return 0.0, 0.0, None
+        n = len(xs)
+        mx = sum(xs) / n
+        my = sum(ys) / n
+        sxx = sum((x - mx) ** 2 for x in xs)
+        sxy = sum((x - mx) * (y - my) for x, y in zip(xs, ys))
+        slope = sxy / sxx if sxx != 0 else 0.0
+        syy = sum((y - my) ** 2 for y in ys)
+        r2 = (sxy ** 2) / (sxx * syy) if (sxx * syy) != 0 else 0.0
+        # Son değerden anomali
+        last_x = max(xs)
+        last_y = ys[xs.index(last_x)]
+        pred = mx + slope * (last_x - mx)
+        resid = last_y - pred
+        std = math.sqrt(syy / (n - 2)) if n > 2 else 0.0
+        z = resid / std if std > 0 else 0.0
+        anomaly = {"z": round(z, 2), "anomaly": abs(z) > 1.5,
+                   "direction": "above" if z > 1.5 else ("below" if z < -1.5 else "normal")}
+        return round(slope, 4), round(r2, 3), anomaly
+
+    t_slope, t_r2, t_anom = ols(t_vals)
+    p_slope, p_r2, p_anom = ols(p_vals)
+
+    guven = round(min(100, max(0, ((t_r2 + p_r2) / 2) * 100)), 1)
+    if guven >= 60:
+        yorum = "Trendler istatistiksel olarak anlamlıdır; decennial planlama için güvenilir."
+    elif guven >= 30:
+        yorum = "Trendler orta seydede; yerel gözlemle desteklenmelidir."
+    else:
+        yorum = "Trendler zayıf; tek yılNASA verisine dayanılarak yorumlanmalıdır."
+
+    return {
+        "sicaklik_trend": {"slope": t_slope, "r2": t_r2, "anomali": t_anom},
+        "yagis_trend": {"slope": p_slope, "r2": p_r2, "anomali": p_anom},
+        "guven_duzeyi": guven,
+        "yorumlama": yorum,
+        "yillar": years,
+    }
+
+
+def bare_field_tespit(stres_takvimi):
+    """12 aylık stres takviminden boş tarla riskli ayları belirler (yüksek stres + düşük yağış)."""
+    riskli = []
+    for gun in stres_takvimi:
+        if gun["stres"] in ("yüksek", "kurak") and gun["yağış"] < 1.0:
+            riskli.append(gun["ay"])
+    return riskli
+
+
+def belirsizlik_degerlendir(ekstra):
+    """Kaç NASA kaynağı gerçek veri verdiğine göre belirsizlik seviyesi."""
+    sayac = 1  # POWER her zaman var
+    for kaynak in ("smap", "ecostress", "landsat_ndvi", "srtm", "gpm"):
+        if ekstra.get(kaynak, {}).get("available"):
+            sayac += 1
+    if sayac >= 5:
+        return "düşük"
+    if sayac >= 3:
+        return "orta"
+    return "yüksek"
+
+
+def strategi_skoru(ort, oncelikler, crop, onceki, constraints, crops_global, ekstra=None):
+    skor = clima_uygunluk(ort, crop, ekstra)
 
     if constraints:
         if constraints.get("irrigation") == "yok":
@@ -116,6 +229,11 @@ def strategi_skoru(ort, oncelikler, crop, onceki, constraints, crops_global):
         if oncelikler.get("pazar_geliri") and crop.get("fiyat_tl_kg", 0) > 25:
             skor += 6
 
+    # SMAP土壌 nemi varsa su-stresli bitkilere ceza
+    if ekstra and ekstra.get("smap", {}).get("available"):
+        if crop["su_ihtiyacı"] == "yüksek":
+            skor = max(0, skor - 5)
+
     return round(min(100, max(0, skor)), 1)
 
 
@@ -127,9 +245,9 @@ STRATEJILER = {
         "grup_vurgu": ["iyileştirici", "nötr"],
         "aciklama_tr": "Toprağı yormayan, nohut ve mercimek gibi baklagillerle toprağa doğal gübre bırakan ve tarlayı dinlendiren yol.",
         "aciklama_en": "Rotation emphasizing nitrogen-fixers and cover crops to rest soil and reduce erosion.",
-        "neden_tr": "NASA uydu verilerine göre bu mevsimde tarlayı yormayan baklagiller (nohut, mercimek) ekilirse, toprağa doğal gübre bırakır ve seneye ekeceğiniz buğdayın verimini artırır.",
-        "neden_en": "Based on NASA POWER precipitation and temperature data, nitrogen-fixers (chickpea, pea) and cover crops are placed in low water-stress seasons to increase soil organic matter.",
-        "kanit_tr": "Tarımsal araştırmalar, nohut ve mercimeğin dekara yaklaşık 4-6 kg saf doğal azot (gübre) kazandırdığını kanıtlamaktadır.",
+        "neden_tr": "NASA POWER yağış ve sıcaklık verilerine göre bu mevsimde tarlayı yormayan baklagiller (nohut, mercimek) ekilirse, toprağa doğal gübre bırakır ve seneye ekeceğiniz buğdayın verimini artırır. SMAP土壌 nemi düşükse su tasarruflu baklagiller tercih edilir.",
+        "neden_en": "Based on NASA POWER precipitation and temperature data, nitrogen-fixers (chickpea, pea) and cover crops are placed in low water-stress seasons to increase soil organic matter. SMAP soil moisture guides water-saving legume selection.",
+        "kanit_tr": "Tarımsal araştırmalar, nohut ve mercimeğin dekara yaklaşık 4-6 kg saf doğal azot (gübre) kazandırdığını kanıtlamaktadır. NASA SMAP土壌 nemi ve POWER yağış verileri bunu desteklemektedir.",
         "kanit_en": "NASA SMAP soil moisture and POWER precipitation data; agronomic literature shows nitrogen-fixers contribute ~40-60 kg/ha N.",
         "faydalar_tr": ["Seneye atacağınız gübre masrafı düşer", "Toprağın su tutma gücü artar", "Tarlanın bereketi uzun yıllar korunur"],
         "faydalar_en": ["Soil organic matter increases", "Erosion risk decreases", "Chemical fertilizer need drops", "Water retention improves"],
@@ -145,8 +263,8 @@ STRATEJILER = {
         "grup_vurgu": ["düşük", "orta"],
         "aciklama_tr": "Az su isteyen, kuraklığa kafa tutan nohut, arpa veya mercimek ile su ve elektrik/mazot faturasını düşüren yol.",
         "aciklama_en": "Rotation minimizing water use with low-water, drought-tolerant crops.",
-        "neden_tr": "Bölgenizin NASA yağış ve sıcaklık geçmişi kuraklık eğilimi gösterdiği için, suyu az tüketen ve sıcağa dayanıklı çeşitler önerildi.",
-        "neden_en": "Based on NASA POWER low precipitation and high temperature data, low-water crops (lentil, chickpea, barley) are preferred.",
+        "neden_tr": "Bölgenizin NASA yağış ve sıcaklık geçmişi kuraklık eğilimi gösterdiği için, suyu az tüketen ve sıcağa dayanıklı çeşitler önerildi. SMAP土壌 nemi mevcutsa su açığı aylarında bu bitkilere öncelik verilir.",
+        "neden_en": "Based on NASA POWER low precipitation and high temperature data, low-water crops (lentil, chickpea, barley) are preferred. SMAP soil moisture flags dry months for water-saving crop priority.",
         "kanit_tr": "NASA yağış ölçümleri ve tarla denemelerine göre nohut ve arpa, mısır veya pamuğa kıyasla %40-60 daha az suya ihtiyaç duyar.",
         "kanit_en": "NASA GPM precipitation and POWER temperature data; studies show lentil and chickpea use 30-50% less water than cereals.",
         "faydalar_tr": ["Sulama ve elektrik/mazot masrafı yarı yarıha düşer", "Kurak yılda bile ürün tarlada yanmaz", "Kuyu suyunu tüketmez"],
@@ -268,23 +386,33 @@ def rotasyon_dizisi_uret(tum_bitkiler, crops, gecmis_list=None, lang="tr"):
     y3_candidates = [b for b in tum_bitkiler if b["anahtar"] not in (y1["anahtar"], y2["anahtar"])]
     y3 = y3_candidates[0] if y3_candidates else tum_bitkiler[-1]
 
+    rolleri = {
+        1: ("toprağı dinlendirici baklagil", "soil-restoring nitrogen fixer",
+            "Toprağa azot bırakarak sonraki yıllar için bereketi hazırlar.",
+            "Adds nitrogen to soil, preparing fertility for following years."),
+        2: ("su tasarruflu ve verim odaklı", "water-saving and yield-focused",
+            "Kuraklık riskini azaltırken verimi korur.",
+            "Reduces drought risk while maintaining yield."),
+        3: ("ekonomi ve toprağe müteakip karar", "economy and soil compatibility",
+            "Pazar fiyatı ve toprağın dayanım bakımdan dengeli seçim.",
+            "Balanced choice for market price and soil resilience."),
+    }
+
     plan = []
     for idx, b in enumerate([y1, y2, y3], start=1):
+        rol_tr, rol_en, aciklama_tr, aciklama_en = rolleri[idx]
         plan.append({
             "yil": idx,
             "bitki": b["bitki"],
             "anahtar": b["anahtar"],
             "skor": b["skor"],
-            "aciklama_tr": (
-                "1. yıl: toprağı dinlendirici baklagil" if idx == 1 else
-                "2. yıl: su tasarruflu ve verim odaklı" if idx == 2 else
-                "3. yıl: ekonomi ve toprağe müteakip karar"
-            ),
-            "aciklama_en": (
-                "Year 1: soil-restoring nitrogen fixer" if idx == 1 else
-                "Year 2: water-saving and yield-focused" if idx == 2 else
-                "Year 3: economy and soil compatibility"
-            ),
+            "rol": rol_tr,
+            "rol_en": rol_en,
+            "aciklama": aciklama_tr,
+            "aciklama_en": aciklama_en,
+            "verim_kg": b["verim_kg"],
+            "fiyat_tl": b["fiyat_tl"],
+            "gelir_tl": round(b["verim_kg"] * b["fiyat_tl"], 2),
         })
     return plan
 
@@ -294,6 +422,8 @@ def rotasyon_oneri(ort, oncelikler, mevcut=None, onceki=None, gecmis_bitkiler=No
     L = LANG[lang]
     if ort is None:
         ort = {}
+    if ekstra is None:
+        ekstra = {}
     crops = load_crops()
 
     ort_s = apply_scenario(ort, scenario)
@@ -301,7 +431,7 @@ def rotasyon_oneri(ort, oncelikler, mevcut=None, onceki=None, gecmis_bitkiler=No
 
     tum_bitkiler = []
     for anahtar, c in crops_c.items():
-        skor = strategi_skoru(ort_s, oncelikler, c, onceki, constraints, crops)
+        skor = strategi_skoru(ort_s, oncelikler, c, onceki, constraints, crops, ekstra)
         tum_bitkiler.append({
             "bitki": c["ad"],
             "anahtar": anahtar,
@@ -379,16 +509,23 @@ def rotasyon_oneri(ort, oncelikler, mevcut=None, onceki=None, gecmis_bitkiler=No
 
     en_iyi = tum_bitkiler[0]
 
+    stres_tak = stres_takvimi(ort_s, lang, aylik_veri=aylik)
+    si_analiz = si_trend_analiz(aylik, ort_s)
+
     return {
         "rotasyon_plani": rotasyon_plani,
         "stratejiler": [ts, su_str, mk],
         "en_iyi_bitki": en_iyi,
         "tum_bitkiler": tum_bitkiler[:8],
-        "stres_takvimi": stres_takvimi(ort_s, lang, aylik_veri=aylik),
+        "stres_takvimi": stres_tak,
+        "bare_field_aylari": bare_field_tespit(stres_tak),
+        "si_analiz": si_analiz,
+        "belirsizlik": belirsizlik_degerlendir(ekstra),
         "risk_uyarilari": risk_uyarilari(ort_s, lang),
         "dil": lang,
         "senaryo": scenario,
         "kisitlamalar": constraints,
         "nasa_kaynaklari": L["nasa_sources"],
         "advisor_warn": L["advisor_warn"],
+        "ekstra_kullanildi": ekstra,
     }

@@ -1,1 +1,2 @@
 Sunucu başlatılıyor: http://localhost:5001
+127.0.0.1 - - [15/Nov/2026 11:13:14] "GET /api/bitkiler HTTP/1.1" 200 -
