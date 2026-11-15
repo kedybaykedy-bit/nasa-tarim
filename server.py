@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
-"""NASA Space Apps 2026 - Field Shift v6.0-emo sunucu.
-Gerçek NASA veri fusiónu: POWER, SMAP (NSIDC CMR + download), ECOSTRESS (AppEEARS),
-Landsat/Sentinel-2 NDVI (USGS / Copernicus), SRTM (open-elevation), GPM IMERG (NASA PPS).
+"""NASA Space Apps 2026 - Field Shift v7.0-emo sunucu.
+Gerçek NASA/USDA/NOAA/ESA veri fusiónu: POWER, SMAP (NSIDC CMR), ECOSTRESS (AppEEARS),
+Landsat/Sentinel-2 NDVI (USGS M2M / Copernicus OData), SRTM (open-elevation), GPM IMERG (NASA PPS).
+Ek açık kaynaklar: VIIRS (Earthdata Search), CropScape/CropSmart (GMU), PRISM (OSU),
+NRCS Web Soil Survey / SSURGO, NAIP (USDA ArcGIS Hub), NLCD (USGS EROS), GAEZ (FAO),
+CoCoRaHS, USGS NWIS, USDA AMS Market News, NASS QuickStats, OpenET, LANDFIRE, GEDI,
+Copernicus Data Space, ERA5 (CDS).
 Kimlik bilgileri ortam değişkeninden alınır: NASA_EARTHDATA_USR, NASA_EARTHDATA_PWD,
 USGS_API_KEY, COPERNICUS_USR, COPERNICUS_PWD.
 HTTP: GET /, GET /static/*, POST /api/analiz, POST /api/rotasyon"""
