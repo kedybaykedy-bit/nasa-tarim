@@ -401,6 +401,145 @@ function initLeaflet() {
     const latlng = e.target.getLatLng();
     updateCoords(latlng.lat, latlng.lng);
   });
+
+  // --- NASA uydu overlay katmanları (NDVI +土壌 nem) ---
+  window.ndviLayer = null;
+  window.soilLayer = null;
+
+  // UI toggle ekle (haritanın sağ alt köşesine)
+  const toggleContainer = document.createElement('div');
+  toggleContainer.style.position = 'absolute';
+  toggleContainer.style.bottom = '10px';
+  toggleContainer.style.right = '10px';
+  toggleContainer.style.background = 'rgba(255,255,255,0.95)';
+  toggleContainer.style.padding = '10px';
+  toggleContainer.style.borderRadius = '6px';
+  toggleContainer.style.border = '1px solid #bac6b4';
+  toggleContainer.style.fontFamily = '"Plus Jakarta Sans", sans-serif';
+  toggleContainer.style.fontSize = '12px';
+  toggleContainer.style.zIndex = '1000';
+  toggleContainer.innerHTML = `
+    <div style="font-weight:600; margin-bottom:6px; color:#161c16;">NASA Uydu Katmanları</div>
+    <label style="display:flex; align-items:center; gap:6px; margin-bottom:4px; cursor:pointer;">
+      <input type="checkbox" id="toggleNdvi" />
+      <span>NDVI / Bitki Yeşilişi (Landsat/S2)</span>
+    </label>
+    <label style="display:flex; align-items:center; gap:6px; margin-bottom:4px; cursor:pointer;">
+      <input type="checkbox" id="toggleSoil" />
+      <span>Toprak Nem (SMAP)</span>
+    </label>
+    <div id="overlayStatus" style="font-size:11px; color:#5e6b5f; margin-top:6px;"></div>
+  `;
+  document.body.appendChild(toggleContainer);
+
+  const toggleNdvi = document.getElementById('toggleNdvi');
+  const toggleSoil = document.getElementById('toggleSoil');
+  const overlayStatus = document.getElementById('overlayStatus');
+
+  async function fetchEkstra(lat, lon) {
+    const start = formatDateForAPI('2023-01-01');
+    const end = formatDateForAPI('2023-12-31');
+    const res = await fetch('/api/analiz', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lat, lon, start, end })
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  }
+
+  function clearLayers() {
+    if (window.ndviLayer) { leafletMap.removeLayer(window.ndviLayer); window.ndviLayer = null; }
+    if (window.soilLayer) { leafletMap.removeLayer(window.soilLayer); window.soilLayer = null; }
+  }
+
+  async function applyOverlays(lat, lon) {
+    clearLayers();
+    const data = await fetchEkstra(lat, lon);
+    if (!data) {
+      overlayStatus.textContent = 'Veri alınamadı.';
+      return;
+    }
+    const ekstra = data.ekstra || {};
+    const msgs = [];
+
+    // NDVI katmanı
+    if (toggleNdvi.checked) {
+      const ndvi = ekstra.landsat_ndvi || {};
+      if (ndvi.available) {
+        window.ndviLayer = L.circle([lat, lon], {
+          radius: 1500,
+          color: '#255d36',
+          fillColor: '#255d36',
+          fillOpacity: 0.35,
+          weight: 2
+        }).addTo(leafletMap);
+        window.ndviLayer.bindPopup(`<b>Landsat/S2 NDVI</b><br>Mevcut: ${ndvi.scenes || 0} scene<br>${ndvi.note || ''}`);
+        msgs.push('NDVI katmanı aktif');
+      } else {
+        window.ndviLayer = L.circle([lat, lon], {
+          radius: 1500,
+          color: '#9e3223',
+          fillColor: '#9e3223',
+          fillOpacity: 0.2,
+          weight: 2,
+          dashArray: '5, 5'
+        }).addTo(leafletMap);
+        window.ndviLayer.bindPopup('<b>NDVI</b><br>API anahtarı gerekli (USGS / Copernicus)');
+        msgs.push('NDVI: kimlik gerekli');
+      }
+    }
+
+    // Toprak nem katmanı
+    if (toggleSoil.checked) {
+      const smap = ekstra.smap || {};
+      if (smap.available && smap.data_accessible) {
+        window.soilLayer = L.circle([lat, lon], {
+          radius: 2000,
+          color: '#245c6e',
+          fillColor: '#245c6e',
+          fillOpacity: 0.4,
+          weight: 2
+        }).addTo(leafletMap);
+        window.soilLayer.bindPopup(`<b>SMAP Toprak Nem</b><br>${smap.granules || 0} granule<br>${smap.note || ''}`);
+        msgs.push('Toprak nem katmanı aktif');
+      } else {
+        window.soilLayer = L.circle([lat, lon], {
+          radius: 2000,
+          color: '#9e3223',
+          fillColor: '#9e3223',
+          fillOpacity: 0.2,
+          weight: 2,
+          dashArray: '5, 5'
+        }).addTo(leafletMap);
+        window.soilLayer.bindPopup('<b>SMAP</b><br>NASA Earthdata girişi gerekli');
+        msgs.push('SMAP: giriş gerekli');
+      }
+    }
+
+    overlayStatus.textContent = msgs.length ? msgs.join(' · ') : 'Seçili katman yok.';
+  }
+
+  toggleNdvi.addEventListener('change', async () => {
+    const lat = parseFloat(latInput.value);
+    const lon = parseFloat(lonInput.value);
+    if (!isNaN(lat) && !isNaN(lon)) await applyOverlays(lat, lon);
+  });
+
+  toggleSoil.addEventListener('change', async () => {
+    const lat = parseFloat(latInput.value);
+    const lon = parseFloat(lonInput.value);
+    if (!isNaN(lat) && !isNaN(lon)) await applyOverlays(lat, lon);
+  });
+
+  // Koordinat değişince overlay'leri yeniden çiz
+  const origUpdateCoords = updateCoords;
+  window.updateCoords = function(lat, lon) {
+    origUpdateCoords(lat, lon);
+    if (toggleNdvi.checked || toggleSoil.checked) {
+      applyOverlays(lat, lon);
+    }
+  };
 }
 
 function updateCoords(lat, lon) {

@@ -3,3 +3,6 @@ Sunucu başlatılıyor: http://localhost:5001
 127.0.0.1 - - [15/Nov/2026 11:17:59] "GET / HTTP/1.1" 404 -
 127.0.0.1 - - [15/Nov/2026 11:17:59] "GET /favicon.ico HTTP/1.1" 404 -
 127.0.0.1 - - [15/Nov/2026 11:18:01] "GET / HTTP/1.1" 404 -
+127.0.0.1 - - [15/Nov/2026 12:38:48] "GET /api/bitkiler HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 12:38:52] "POST /api/analiz HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 12:38:54] "POST /api/rotasyon HTTP/1.1" 200 -

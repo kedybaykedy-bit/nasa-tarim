@@ -1,4 +1,4 @@
-"""NASA Space Apps 2026 - Field Shift v7.0-emo (emo) rotasyon motoru.
+"""NASA Space Apps 2026 - Field Shift v8.0-emo (emo) rotasyon motoru.
 Gerçek NASA/USDA/NOAA/ESA veri fusiónu: POWER, SMAP, ECOSTRESS, Landsat NDVI, SRTM, GPM IMERG.
 Ek açık kaynaklar: VIIRS, CropScape/CropSmart, PRISM, NRCS WSS/SSURGO, NAIP, NLCD, GAEZ,
 CoCoRaHS, USGS NWIS, USDA AMS Market News, NASS QuickStats, OpenET, LANDFIRE, GEDI,
