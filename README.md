@@ -1,9 +1,9 @@
-# Field Shift — NASA Space Apps 2026 | v5.0 (emo)
+# Field Shift — NASA Space Apps 2026 | v6.0-emo
 
 NASA POWER, SMAP, ECOSTRESS, Landsat NDVI, SRTM ve GPM verilerini birleştiren, çiftçilere **3 yıllık ekim rotasyonu**, stres takvimi, SI trendi analizi ve gelir simülasyonu sunan karar destek sistemi.
 
 ## Özellikler
-- **6 NASA veri kaynağı:** POWER (günlük + aylık iklim), SMAP (toprak nemi granulesi, NSIDC CMR), SRTM (eşya/elevasyon, open-elevation), ECOSTRESS (ET / ısı stresi), Landsat/Sentinel-2 (NDVI), GPM (yağış).
+- **6 NASA veri kaynağı:** POWER (günlük + aylık iklim), SMAP (toprak nemi granulesi, NSIDC CMR), SRTM (eşya/elevasyon, open-elevation), ECOSTRESS (ET / ısı stresi, AppEEARS), Landsat/Sentinel-2 (NDVI, USGS / Copernicus), GPM IMERG (yağış, NASA PPS).
 - **3 Yıllık Rotasyon Takvimi:** Yıl 1 toprağı dinlendiren baklagil, Yıl 2 su tasarruflu, Yıl 3 ekonomik denge. Her yıl için rol, verim ve gelir tahmini.
 - **Dinamik Önceki Mahsul Girişi:** Çiftçi geçmişini ekleyebilir; azot bonusu otomatik hesaplanır.
 - **16 Türk Mahsul Kataloğu:** Her biri için verim (kg/dönüm) ve fiyat (₺/kg) ile gelir simülasyonu.
@@ -17,7 +17,7 @@ NASA POWER, SMAP, ECOSTRESS, Landsat NDVI, SRTM ve GPM verilerini birleştiren, 
 ```bash
 git clone https://github.com/kedybaykedy-bit/nasa-tarim.git
 cd nasa-tarim
-git checkout v5.0-emo
+git checkout v6.0-emo
 python3 server.py
 ```
 Tarayıcıda: http://localhost:8080 (veya PORT ortam değişkeni)
@@ -27,14 +27,31 @@ Tarayıcıda: http://localhost:8080 (veya PORT ortam değişkeni)
 - `POST /api/rotasyon` — ortalama, oncelikler, mevcut, onceki, gecmis_bitkiler, aylik, ekstra, scenario, constraints, lang → 3 strateji, 3 yıllık plan, stres takvimi, SI trendi, belirsizlik, gelir simülasyonu
 - `GET /api/bitkiler` — mahsul kataloğu
 
+## API Anahtarı / Kimlik Bilgisi (ortam değişkenleri)
+Gerçek NASA uydu verisi çekmek için şu ortam değişkenlerini ayarlayın:
+
+```bash
+export NASA_EARTHDATA_USR="kullanici_adiniz"
+export NASA_EARTHDATA_PWD="sifreniz"        # SMAP granule download + ECOSTRESS AppEEARS
+export USGS_API_KEY="anahtarınız"            # Landsat scene search
+export COPERNICUS_USR="kullanici_adiniz"     # Sentinel-2 OData
+export COPERNICUS_PWD="sifreniz"             # Sentinel-2 OData
+```
+
+Kimlik bilgisi girilmeden ilgili kaynaklar şeffaf "kimlik gerekli" notu ile işaretlenir ve kod çalışmaya devam eder.
+
 ## Mentör Formu Ölçütleri (1–5)
 | Kategori | Hedef |
 |----------|-------|
 | Etk | 4–5 |
 | Yaratıcılık | 4–5 |
 | Geçerlilik / Uygulanabilirlik | 4–5 |
-| İlgiLilik (NASA veri) | 4–5 (POWER ve SRTM gerçek; ECOSTRESS/Landsat/GPM API anahtarı ile tam entegrasyon) |
+| İlgiLilik (NASA veri) | 4–5 (POWER ve SRTM gerçek; SMAP/ECOSTRESS/Landsat/GPM API anahtarı ile tam entegrasyon) |
 | Sunum / İletişim | 4–5 |
 
-## API Anahtarı Gerekli Kaynaklar
-ECOSTRESS (AppEEARS), Landsat NDVI (USGS), GPM IMERG (NASA PPS) kaynakları gerçek veri çekimi için NASA Earthdata token / API anahtarı gerektirir. Kodda şeffaf fallback mevcut; anahtar eklendiğinde aktif hale gelir.
+## Kimlik Bilgisi Gerekli Kaynaklar
+- **SMAP:** NSIDC CMR granule araması kimliksiz; gerçek pixel indirme için NASA_EARTHDATA_USR/PWD gerekir.
+- **ECOSTRESS:** AppEEARS task submission için NASA_EARTHDATA_USR/PWD gerekir.
+- **Landsat:** USGS M2M scene search için USGS_API_KEY gerekir.
+- **Sentinel-2:** Copernicus OData için COPERNICUS_USR/PWD gerekir.
+- **GPM IMERG:** NASA PPS/Giovanni endpoint gerekebilir.
