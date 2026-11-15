@@ -1,0 +1,82 @@
+{
+  "buğday": {
+    "ad": "Buğday",
+    "grup": "kışlık",
+    "sıcaklık": [5, 22],
+    "yağış": [1.0, 4.0],
+    "güneş": [15, 28],
+    "su_ihtiyacı": "orta",
+    "toprak_etkisi": "nötr",
+    "not": "Serin ve yağışlı mevsimler için temel kışlık tahıl."
+  },
+  "mısır": {
+    "ad": "Mısır",
+    "grup": "yazlık",
+    "sıcaklık": [18, 32],
+    "yağış": [2.0, 6.0],
+    "güneş": [25, 35],
+    "su_ihtiyacı": "yüksek",
+    "toprak_etkisi": "tüketici",
+    "not": "Sıcak ve güneşli aylarla yüksek verim verir."
+  },
+  "nohut": {
+    "ad": "Nohut",
+    "grup": "bahar",
+    "sıcaklık": [10, 25],
+    "yağış": [0.2, 2.0],
+    "güneş": [20, 30],
+    "su_ihtiyacı": "düşük",
+    "toprak_etkisi": "iyileştirici",
+    "not": "Az yağışlı bölgelere uygun, toprağa azot bırakır."
+  },
+  "domates": {
+    "ad": "Domates",
+    "grup": "yazlık",
+    "sıcaklık": [18, 28],
+    "yağış": [2.0, 5.0],
+    "güneş": [25, 35],
+    "su_ihtiyacı": "yüksek",
+    "toprak_etkisi": "tüketici",
+    "not": "Nemli ve ılıman sıcaklık koşulları gerektirir."
+  },
+  "mercan": {
+    "ad": "Mercan",
+    "grup": "yazlık",
+    "sıcaklık": [25, 40],
+    "yağış": [0.0, 1.0],
+    "güneş": [28, 40],
+    "su_ihtiyacı": "düşük",
+    "toprak_etkisi": "nötr",
+    "not": "Sıcak ve kurak bölgelere dayanıklıdır."
+  },
+  "patates": {
+    "ad": "Patates",
+    "grup": "yazlık",
+    "sıcaklık": [15, 25],
+    "yağış": [3.0, 7.0],
+    "güneş": [20, 30],
+    "su_ihtiyacı": "yüksek",
+    "toprak_etkisi": "tüketici",
+    "not": "Serin gece ve düzenli yağışlı birikimli topraklarda verimlidir."
+  },
+  "arpa": {
+    "ad": "Arpa",
+    "grup": "kışlık",
+    "sıcaklık": [5, 20],
+    "yağış": [0.5, 3.0],
+    "güneş": [15, 25],
+    "su_ihtiyacı": "düşük",
+    "toprak_etkisi": "nötr",
+    "not": "Buğdaydan daha kurak koşullara dayanır."
+  },
+  "bezelye": {
+    "ad": "Bezelye",
+    "grup": "bahar",
+    "sıcaklık": [10, 22],
+    "yağış": [1.0, 3.0],
+    "güneş": [18, 28],
+    "su_ihtiyacı": "orta",
+    "toprak_etkisi": "iyileştirici",
+    "not": "Serin bahar aylarında ekilir, toprağa azot katkısı sağlar."
+  }
+}
