@@ -1,4 +1,4 @@
-# Field Shift — NASA Space Apps 2026 | v8.0-emo
+# Field Shift — NASA Space Apps 2026 | v9.0-emo
 
 NASA, USDA, NOAA, ESA ve Copernicus uydu/iklim verilerini birleştiren, çiftçilere **3 yıllık ekim rotasyonu**, stres takvimi, SI trendi analizi ve gelir simülasyonu sunan karar destek sistemi.
 
@@ -17,7 +17,7 @@ NASA, USDA, NOAA, ESA ve Copernicus uydu/iklim verilerini birleştiren, çiftçi
 ```bash
 git clone https://github.com/kedybaykedy-bit/nasa-tarim.git
 cd nasa-tarim
-git checkout v8.0-emo
+git checkout v9.0-emo
 python3 server.py
 ```
 Tarayıcıda: http://localhost:8080 (veya PORT ortam değişkeni)

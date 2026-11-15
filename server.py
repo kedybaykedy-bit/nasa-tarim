@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""NASA Space Apps 2026 - Field Shift v8.0-emo sunucu.
-Gerçek NASA/USDA/NOAA/ESA veri fusiónu: POWER, SMAP (NSIDC CMR + Planetary Computer STAC), ECOSTRESS (AppEEARS),
+"""NASA Space Apps 2026 - Field Shift v9.0-emo sunucu.
+Tam NASA/USDA/NOAA/ESA veri fusiónu: POWER, SMAP (NSIDC CMR + Planetary Computer STAC), ECOSTRESS (AppEEARS),
 Landsat/Sentinel-2 NDVI (USGS M2M / Copernicus OData / Planetary Computer STAC), SRTM (open-elevation), GPM IMERG (NASA PPS).
 Ek açık kaynaklar: VIIRS (Earthdata Search), CropScape/CropSmart (GMU), PRISM (OSU),
 NRCS Web Soil Survey / SSURGO, NAIP (USDA ArcGIS Hub), NLCD (USGS EROS), GAEZ (FAO),
